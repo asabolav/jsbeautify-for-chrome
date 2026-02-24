@@ -74,19 +74,21 @@
   }
 
   function highlightJs(code) {
-    const keywords = new Set([
-      'const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'switch', 'case', 'break',
-      'continue', 'new', 'class', 'extends', 'import', 'export', 'default', 'await', 'async', 'try', 'catch',
-      'finally', 'throw'
-    ]);
-
     const escaped = htmlEscape(code);
-    return escaped
-      .replace(/(\/\/.*$)/gm, '<span class="tok-comment">$1</span>')
+
+    const tokenized = escaped
       .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="tok-comment">$1</span>')
-      .replace(/(["'`])((?:\\.|(?!\1).)*)\1/g, '<span class="tok-string">$&</span>')
-      .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="tok-number">$1</span>')
-      .replace(/\b([a-zA-Z_$][\w$]*)\b/g, (m, id) => (keywords.has(id) ? `<span class="tok-keyword">${id}</span>` : m));
+      .replace(/(\/\/.*$)/gm, '<span class="tok-comment">$1</span>')
+      .replace(/(`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/g, '<span class="tok-string">$1</span>')
+      .replace(/\b(0x[\da-fA-F]+|\d+(?:\.\d+)?(?:e[+-]?\d+)?)\b/g, '<span class="tok-number">$1</span>')
+      .replace(/\b(true|false|null|undefined|NaN|Infinity)\b/g, '<span class="tok-const">$1</span>')
+      .replace(/\b(this|super|new|instanceof|typeof|void|delete|in|of|await|async|yield)\b/g, '<span class="tok-opkw">$1</span>')
+      .replace(/\b(class|extends|constructor|function|return|if|else|switch|case|default|for|while|do|break|continue|throw|try|catch|finally|import|export|from|as|let|const|var)\b/g, '<span class="tok-keyword">$1</span>')
+      .replace(/\b([A-Za-z_$][\w$]*)(?=\s*\()/g, '<span class="tok-function">$1</span>')
+      .replace(/([{}()[\].,;:])/g, '<span class="tok-punct">$1</span>')
+      .replace(/(===|!==|==|!=|<=|>=|=>|\+\+|--|&&|\|\||\+|-|\*|\/|%|=|!|\?|\||&|\^|~|<|>)/g, '<span class="tok-operator">$1</span>');
+
+    return tokenized;
   }
 
   function renderCode(filename, theme) {
@@ -102,14 +104,22 @@
     const style = document.createElement('style');
     style.textContent = `
       body{margin:0}
-      #beautify-shell{min-height:100vh;font-family:ui-monospace,Consolas,monospace;background:var(--bg);color:var(--fg)}
-      #beautify-shell[data-theme="dark"]{--bg:#0b1020;--fg:#e2e8f0;--header:#111827}
-      #beautify-shell[data-theme="light"]{--bg:#fff;--fg:#0f172a;--header:#e2e8f0}
-      header{position:sticky;top:0;display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 16px;background:var(--header)}
-      .actions{display:flex;gap:8px;flex-wrap:wrap}
-      .actions button{padding:6px 10px;border:1px solid #334155;background:transparent;color:inherit;border-radius:6px;cursor:pointer}
-      pre{margin:0;padding:16px;white-space:pre-wrap;word-break:break-word;line-height:1.4}
-      .tok-keyword{color:#c084fc}.tok-number{color:#f59e0b}.tok-string{color:#34d399}.tok-comment{color:#64748b}
+      #beautify-shell{min-height:100vh;font-family:'JetBrains Mono','Fira Code',ui-monospace,Consolas,monospace;background:var(--bg);color:var(--fg)}
+      #beautify-shell[data-theme="dark"]{--bg:#0d1117;--fg:#c9d1d9;--panel:#161b22;--border:#30363d}
+      #beautify-shell[data-theme="light"]{--bg:#ffffff;--fg:#1f2328;--panel:#f6f8fa;--border:#d0d7de}
+      #action-tab{position:fixed;top:8px;right:8px;display:flex;gap:6px;z-index:9999;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+      #action-tab button{padding:4px 8px;border:1px solid var(--border);background:transparent;color:inherit;border-radius:6px;cursor:pointer;font-size:12px}
+      #action-tab button.active{border-color:#58a6ff;color:#58a6ff}
+      pre{margin:0;padding:40px 16px 16px 16px;white-space:pre;overflow:auto;line-height:1.55;tab-size:2}
+      .tok-keyword{color:#ff7b72;font-weight:600}
+      .tok-opkw{color:#d2a8ff}
+      .tok-function{color:#d2a8ff}
+      .tok-string{color:#a5d6ff}
+      .tok-number{color:#79c0ff}
+      .tok-const{color:#79c0ff}
+      .tok-comment{color:#8b949e;font-style:italic}
+      .tok-operator{color:#ff7b72}
+      .tok-punct{color:#c9d1d9}
     `;
     head.appendChild(style);
 
@@ -118,30 +128,23 @@
     shell.id = 'beautify-shell';
     shell.dataset.theme = theme === 'light' ? 'light' : 'dark';
 
-    const header = document.createElement('header');
-    const title = document.createElement('strong');
-    title.textContent = safeFilename;
+    const actionTab = document.createElement('div');
+    actionTab.id = 'action-tab';
 
-    const actions = document.createElement('div');
-    actions.className = 'actions';
+    const showOriginalBtn = document.createElement('button');
+    showOriginalBtn.textContent = 'Show Original';
 
-    const toggleButton = document.createElement('button');
-    toggleButton.textContent = 'Show original';
+    const beautifyBtn = document.createElement('button');
+    beautifyBtn.textContent = 'Beautify';
+    beautifyBtn.classList.add('active');
 
-    const copyButton = document.createElement('button');
-    copyButton.textContent = 'Copy';
-
-    const downloadButton = document.createElement('button');
-    downloadButton.textContent = 'Download';
-
-    actions.append(toggleButton, copyButton, downloadButton);
-    header.append(title, actions);
+    actionTab.append(showOriginalBtn, beautifyBtn);
 
     const pre = document.createElement('pre');
     const code = document.createElement('code');
     pre.appendChild(code);
 
-    shell.append(header, pre);
+    shell.append(actionTab, pre);
     body.appendChild(shell);
 
     document.documentElement.append(head, body);
@@ -149,28 +152,20 @@
 
     const updateCode = () => {
       code.innerHTML = highlightJs(showingBeautified ? beautifiedCode : originalCode);
+      showOriginalBtn.classList.toggle('active', !showingBeautified);
+      beautifyBtn.classList.toggle('active', showingBeautified);
     };
 
     updateCode();
 
-    toggleButton.addEventListener('click', () => {
-      showingBeautified = !showingBeautified;
-      toggleButton.textContent = showingBeautified ? 'Show original' : 'Show beautified';
+    showOriginalBtn.addEventListener('click', () => {
+      showingBeautified = false;
       updateCode();
     });
 
-    copyButton.addEventListener('click', async () => {
-      await navigator.clipboard.writeText(showingBeautified ? beautifiedCode : originalCode);
-    });
-
-    downloadButton.addEventListener('click', () => {
-      const blob = new Blob([showingBeautified ? beautifiedCode : originalCode], { type: 'application/javascript' });
-      const objectUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = objectUrl;
-      anchor.download = safeFilename || 'beautified.js';
-      anchor.click();
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+    beautifyBtn.addEventListener('click', () => {
+      showingBeautified = true;
+      updateCode();
     });
   }
 
