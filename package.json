@@ -1,0 +1,9 @@
+{
+  "name": "jsbeautify-for-chrome",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint:syntax": "node --check background.js && node --check content.js && node --check modules/defaults.js && node --check modules/highlight.js && node --check modules/storage.js && node --check modules/utils.js && node --check popup/popup.js && node --check options/options.js && node --check lib/js-beautify.js"
+  }
+}

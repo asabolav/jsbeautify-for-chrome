@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>JS Beautify Options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <h1>Formatting options</h1>
+    <label>Indent size <input type="number" id="indentSize" min="1" max="8"></label>
+    <label><input type="checkbox" id="indentWithTabs"> Indent with tabs</label>
+    <label>Max line length <input type="number" id="maxLineLength" min="40" max="500"></label>
+    <label>Semicolon handling
+      <select id="semicolonStyle">
+        <option value="preserve">Preserve</option>
+        <option value="add">Add</option>
+        <option value="remove">Remove</option>
+      </select>
+    </label>
+    <label>Brace style
+      <select id="braceStyle">
+        <option value="collapse">Collapse</option>
+        <option value="expand">Expand</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="spaceInEmptyParens"> Space in empty parenthesis</label>
+    <label>Theme
+      <select id="theme">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+      </select>
+    </label>
+    <button id="save">Save</button>
+    <p id="status"></p>
+  </main>
+  <script type="module" src="options.js"></script>
+</body>
+</html>
