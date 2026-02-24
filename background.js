@@ -1,5 +1,8 @@
 import { js_beautify } from './lib/js-beautify.js';
 import { DEFAULT_SETTINGS, MAX_AUTO_BYTES } from './modules/defaults.js';
+
+const MAX_MANUAL_BYTES = 12 * 1024 * 1024;
+const MAX_HIGHLIGHT_BYTES = 300 * 1024;
 import { getSettings } from './modules/storage.js';
 import { applySemicolonPolicy, createDataHtml, getFilename, htmlEscape, isLikelyJavaScriptUrl } from './modules/utils.js';
 
@@ -71,13 +74,18 @@ async function runBeautify(tabId, url, force) {
     return { ok: false, error: 'Too large for auto mode' };
   }
 
+  if (force && source.text.length > MAX_MANUAL_BYTES) {
+    await notifyError(tabId, 'File is too large to beautify safely (>12MB).');
+    return { ok: false, error: 'Too large for manual mode' };
+  }
+
   const formatted = formatJs(source.text, settings);
   const filename = getFilename(targetUrl);
 
   try {
     await chrome.tabs.sendMessage(tabId, {
       type: 'RENDER_BEAUTIFIED',
-      payload: { original: source.text, formatted, filename, theme: settings.theme }
+      payload: { original: source.text, formatted, filename, theme: settings.theme, disableHighlight: formatted.length > MAX_HIGHLIGHT_BYTES }
     });
   } catch {
     const html = createDataHtml(filename, `<pre><code>${htmlEscape(formatted)}</code></pre>`, settings.theme);

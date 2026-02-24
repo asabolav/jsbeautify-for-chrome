@@ -3,6 +3,7 @@
   let beautifiedCode = '';
   let showingBeautified = true;
   let rendered = false;
+  let disableHighlight = false;
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'GET_PAGE_SOURCE') {
@@ -21,6 +22,7 @@
       originalCode = message.payload.original || '';
       beautifiedCode = message.payload.formatted || '';
       showingBeautified = true;
+      disableHighlight = Boolean(message.payload.disableHighlight);
       renderCode(message.payload.filename || 'script.js', message.payload.theme || 'dark');
     }
 
@@ -30,28 +32,6 @@
 
     return false;
   });
-
-  (function autoDetect() {
-    const info = detectRawJavaScriptDocument();
-    if (!info.bodyText.trim()) return;
-    if (!(info.isJsContentType || info.hasSinglePre || /\.m?js(\?|$)/i.test(location.href))) return;
-
-    const task = () => {
-      chrome.runtime.sendMessage({ type: 'BEAUTIFY_TEXT', payload: { text: info.bodyText } }, (response) => {
-        if (!response?.ok || rendered) return;
-        originalCode = info.bodyText;
-        beautifiedCode = response.formatted || info.bodyText;
-        showingBeautified = true;
-        renderCode(info.title || 'script.js', 'dark');
-      });
-    };
-
-    if ('requestIdleCallback' in window) {
-      requestIdleCallback(task, { timeout: 600 });
-    } else {
-      setTimeout(task, 0);
-    }
-  })();
 
   function detectRawJavaScriptDocument() {
     const bodyText = document.body?.innerText || '';
@@ -111,6 +91,8 @@
       #action-tab button{padding:4px 8px;border:1px solid var(--border);background:transparent;color:inherit;border-radius:6px;cursor:pointer;font-size:12px}
       #action-tab button.active{border-color:#58a6ff;color:#58a6ff}
       pre{margin:0;padding:40px 16px 16px 16px;white-space:pre;overflow:auto;line-height:1.55;tab-size:2}
+      #perf-note{position:fixed;top:44px;right:8px;z-index:9998;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:11px;opacity:.9}
+      code.plain{color:var(--fg)}
       .tok-keyword{color:#ff7b72;font-weight:600}
       .tok-opkw{color:#d2a8ff}
       .tok-function{color:#d2a8ff}
@@ -140,18 +122,30 @@
 
     actionTab.append(showOriginalBtn, beautifyBtn);
 
+    const perfNote = document.createElement('div');
+    perfNote.id = 'perf-note';
+    perfNote.textContent = 'Large file mode: syntax highlighting disabled for performance';
+    perfNote.style.display = disableHighlight ? 'block' : 'none';
+
     const pre = document.createElement('pre');
     const code = document.createElement('code');
     pre.appendChild(code);
 
-    shell.append(actionTab, pre);
+    shell.append(actionTab, perfNote, pre);
     body.appendChild(shell);
 
     document.documentElement.append(head, body);
     document.title = `${safeFilename} (Beautified)`;
 
     const updateCode = () => {
-      code.innerHTML = highlightJs(showingBeautified ? beautifiedCode : originalCode);
+      const current = showingBeautified ? beautifiedCode : originalCode;
+      if (disableHighlight) {
+        code.classList.add('plain');
+        code.textContent = current;
+      } else {
+        code.classList.remove('plain');
+        code.innerHTML = highlightJs(current);
+      }
       showOriginalBtn.classList.toggle('active', !showingBeautified);
       beautifyBtn.classList.toggle('active', showingBeautified);
     };
