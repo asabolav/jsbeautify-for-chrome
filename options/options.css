@@ -1,0 +1,6 @@
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#0f172a}
+main{max-width:720px;margin:30px auto;display:grid;gap:12px;background:#fff;border:1px solid #e2e8f0;padding:20px;border-radius:10px}
+label{display:grid;gap:6px}
+input,select,button{padding:8px}
+button{max-width:140px}
+#status{font-size:13px;color:#16a34a}

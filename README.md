@@ -1,13 +1,54 @@
-Install it, and bask in His glory.
+# JS Beautify for Chrome (Manifest V3)
 
-* [Click here to install from the Chrome extension gallery](https://chrome.google.com/extensions/detail/kkioiolcacgoihiiekambdciinadbpfk)
+## Folder structure
 
-If you haven't got the love for Clippy, you can use an alert bar instead (there's a setting inside the extension options). You can also change specifics about how the code is formatted.
+```
+.
+├── manifest.json
+├── background.js
+├── content.js
+├── lib/
+│   └── js-beautify.js
+├── modules/
+│   ├── defaults.js
+│   ├── highlight.js
+│   ├── storage.js
+│   └── utils.js
+├── popup/
+│   ├── popup.html
+│   ├── popup.css
+│   └── popup.js
+├── options/
+│   ├── options.html
+│   ├── options.css
+│   └── options.js
+└── src/assets/
+    ├── icon_48.png
+    └── icon_128.png
+```
 
-![screenshot with clippy](http://i.imgur.com/rJEg1.png)
+## Install / run
+1. Open `chrome://extensions`
+2. Enable **Developer mode**
+3. Click **Load unpacked**
+4. Select this project folder (`jsbeautify-for-chrome`)
 
-![screenshot without clippy](http://i.imgur.com/ZhXnX.png)
+## Usage
+- Open any JavaScript file URL, e.g. `https://code.jquery.com/jquery-3.7.1.min.js`.
+- Extension auto-beautifies when enabled.
+- Click extension popup → **Beautify this tab** for manual mode.
+- If host access is needed for a manual fetch, Chrome prompts for origin permission.
+- Open Options page for formatting preferences.
 
-Uses [JSBeautify](http://jsbeautifier.org).
+## Example test URLs
+- https://code.jquery.com/jquery-3.7.1.min.js
+- https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js
+- view-source:https://code.jquery.com/jquery-3.7.1.min.js
 
-A big thanks to [Clement Ng](http://clmnt.com) for the logo.
+## Production build
+This project ships pre-bundled with local files, no external CDN dependency.
+
+To package:
+1. Ensure project root contains only required extension files.
+2. Zip the folder contents.
+3. Upload zip in Chrome Web Store Developer Dashboard.
